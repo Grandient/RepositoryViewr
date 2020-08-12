@@ -82,16 +82,22 @@ function checkAuth(owner, repo ,auth){
   return p3;
 }
 
+function example() {
+
+}
+
 function App(){
   let [owner, setOwner] = useState('');
   let [repo, setRepo] = useState('');
   let [auth, setAuth] = useState('');
   let [check, setCheck] = useState(false);
   let [error, setError] = useState(null)
+  let [isError, setIsError] = useState(false)
 
   let notSelected = (
     <div id="info">
       <Form>
+        <Message>
         <Form.Field>
           <label>Author</label>
           <input placeholder='Ex: facebook' onChange={(e) => setOwner(e.target.value)}/>
@@ -126,22 +132,34 @@ function App(){
             let auth = result[2].val
             octokit = new Octokit({auth: auth});
             setCheck(true) 
+            setIsError(false)
           } else {
             setError(errors)
+            setIsError(true)
           } 
         }}>Submit</Button>
+        </Message>
         <Message>
         <Message.Header>How to get authenticated.</Message.Header>
-        Unfortunately Github limits the amount of API calls from unauthenticated users so in order for this application to work correctly you need your PAC (Personal Access Token)
+        Unfortunately Github limits the amount of API calls from unauthenticated users so in order for this application to work correctly you need your PAT (Personal Access Token)
         <br></br>
         <a href="https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token">
           Github Documentation
         </a>
+        <br></br>
+        Only Read Access is required.
         </Message>
+        {isError ?
         <Message negative>
         <Message.Header negative>Errors</Message.Header>
         <p>{error}</p>
         </Message>
+       : null}
+       <Message>
+         Don't wanna make an authenicator just to try it out? Here is an example with just a click of a button!
+         <br></br>
+         <Button onClick={() => example()}>Example</Button>
+       </Message>
       </Form>
     </div>
 
@@ -216,13 +234,17 @@ function highlight(key, str){
   }
 }
 
-function updateCommit(commit){
-  console.log(commit)
+function updateCommit(commit, key){
   let data = commit.files.map((file) => {
     return {name: file.filename, changes: file.changes}
   })
-  console.log(data)
   updateChart(data, chart)
+
+  if(key.current.style.backgroundColor == "gray"){
+    key.current.style.backgroundColor = "darkgray";
+  } else {
+    key.current.style.backgroundColor = "gray";
+  }
 }
 
 function CommitTable(props) {
@@ -246,7 +268,7 @@ function CommitTable(props) {
           <tr key={key} ref={setRef(key.toString())} 
             onMouseEnter={(e) => highlight(getRef(key.toString()), "In")} 
             onMouseLeave={(e) => highlight(getRef(key.toString()), "Out")}
-            onClick={() => updateCommit(commit)}>
+            onClick={() => updateCommit(commit, getRef(key.toString()))}>
             <Table.Cell>{commit.author}</Table.Cell>
             <Table.Cell>{commit.date}</Table.Cell>
             <Table.Cell>{commit.stats.total}</Table.Cell>
