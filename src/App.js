@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Form , Button, Message } from 'semantic-ui-react';
+import { Table, Form , Button, Message, List } from 'semantic-ui-react';
 import './App.css';
 import 'semantic-ui-css/semantic.min.css'
 import { createChart, updateChart, clearChart} from './BarChart';
 import moment from 'moment';
 import useDynamicRefs from 'use-dynamic-refs';
+const example = require('./Example.json');
 const { Octokit } = require("@octokit/rest");
 
 var octokit = null
@@ -82,10 +83,6 @@ function checkAuth(owner, repo ,auth){
   return p3;
 }
 
-function example() {
-
-}
-
 function App(){
   let [owner, setOwner] = useState('');
   let [repo, setRepo] = useState('');
@@ -93,6 +90,7 @@ function App(){
   let [check, setCheck] = useState(false);
   let [error, setError] = useState(null)
   let [isError, setIsError] = useState(false)
+  let [isExample, setIsExample] = useState(false);
 
   let notSelected = (
     <div id="info">
@@ -147,7 +145,11 @@ function App(){
           Github Documentation
         </a>
         <br></br>
-        Only Read Access is required.
+        Perimissions Required:
+        <List as='ul'>
+        <List.Item as='li'>repo:status</List.Item>
+        <List.Item as='li'>public_repo</List.Item>
+        </List>
         </Message>
         {isError ?
         <Message negative>
@@ -158,7 +160,7 @@ function App(){
        <Message>
          Don't wanna make an authenicator just to try it out? Here is an example with just a click of a button!
          <br></br>
-         <Button onClick={() => example()}>Example</Button>
+         <Button onClick={() => setIsExample(true)}>Example</Button>
        </Message>
       </Form>
     </div>
@@ -167,15 +169,41 @@ function App(){
   return (
     <div>
       <h1 className="title">Repository Viewer</h1>
-      {check ? <Selected/> : notSelected}
+      {check ? <Selected/> : null}
+      {isExample ? <Example/> : null}
+      {(check == true || isExample == true) ? null : notSelected}
     </div>
 
   )
 }
 
+function Example(){
+  let commits = example;
+  let table = 
+  <div id="table">
+    <CommitTable commits={commits}/>
+  </div>
+
+  useEffect(() => {
+    chart = createChart(chart);
+    return () => {
+    }
+  }, [])
+  
+  return (
+    <div className="mainContainer">
+      {table}
+      <div>
+        <canvas id="canvas"></canvas>
+      </div>
+    </div>
+  );
+}
+
 function Selected() {
   let [commits, updateCommits] = useState([]);
   let [loaded, updateLoad] = useState(false);
+
   
   useEffect(() => {
     let owner = OWNER;
@@ -249,7 +277,19 @@ function updateCommit(commit, key){
 
 function CommitTable(props) {
   let [getRef, setRef] = useDynamicRefs();
-
+  /*
+  function download(content, fileName, contentType) {
+    var a = document.createElement("a");
+    var file = new Blob([content], {type: contentType});
+    a.href = URL.createObjectURL(file);
+    a.download = fileName;
+    a.click();
+  }
+  //console.log(props.commits.length);
+  if(props.commits.length == 30){
+    let b = JSON.stringify(props.commits)
+    download(b, 'Example.json', 'application/json');
+  }*/
   return (
     <Table>
       <Table.Header>

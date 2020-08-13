@@ -42,7 +42,6 @@ export function updateChart(data, chart) {
     if(file.changes > max) max = file.changes;
   })
   
-  console.log(max);
   var cScale = scale.scaleSequential(scaleChrome.interpolateViridis).domain([0,max]); 
   data.sort(function(a,b) {
     return b.changes - a.changes;
