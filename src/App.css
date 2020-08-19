@@ -6,6 +6,9 @@
   flex-direction: row;
 }
 
+#root {
+  display: flex;
+}
 #info {
   justify-content: center;
   width: 80vw;

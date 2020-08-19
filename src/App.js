@@ -3,6 +3,7 @@ import { Table, Form , Button, Message, List } from 'semantic-ui-react';
 import './App.css';
 import 'semantic-ui-css/semantic.min.css'
 import { createChart, updateChart, clearChart} from './BarChart';
+import { createLineChart, updateLineChart, clearLineChart} from './LineChart';
 import moment from 'moment';
 import useDynamicRefs from 'use-dynamic-refs';
 const example = require('./Example.json');
@@ -13,6 +14,7 @@ var OWNER = null;
 var REPO = null;
 var hashes = [];
 var chart = null;
+var lineChart = null;
 
 function validate(owner, repo, auth){
   let p1 = checkUser(owner)
@@ -88,8 +90,8 @@ function App(){
   let [repo, setRepo] = useState('');
   let [auth, setAuth] = useState('');
   let [check, setCheck] = useState(false);
-  let [error, setError] = useState(null)
-  let [isError, setIsError] = useState(false)
+  let [error, setError] = useState(null);
+  let [isError, setIsError] = useState(false);
   let [isExample, setIsExample] = useState(false);
 
   let notSelected = (
@@ -170,14 +172,17 @@ function App(){
     <div>
       <h1 className="title">Repository Viewer</h1>
       {check ? <Selected/> : null}
-      {isExample ? <Example/> : null}
+      {isExample ? 
+      <Button style={{display: 'flex', alignContent: 'center', margin: "auto", fontSize: "28px"}} onClick={() => setIsExample(false)}>Back</Button>
+      : null}
+      {isExample ? <Example /> : null}
       {(check == true || isExample == true) ? null : notSelected}
     </div>
 
   )
 }
 
-function Example(){
+function Example(props){
   let commits = example;
   let table = 
   <div id="table">
@@ -189,22 +194,23 @@ function Example(){
     return () => {
     }
   }, [])
-  
+
   return (
     <div className="mainContainer">
       {table}
       <div>
         <canvas id="canvas"></canvas>
+        <canvas id="canvas2"></canvas>
       </div>
     </div>
   );
 }
 
+
 function Selected() {
   let [commits, updateCommits] = useState([]);
   let [loaded, updateLoad] = useState(false);
 
-  
   useEffect(() => {
     let owner = OWNER;
     let repo = REPO;
@@ -221,7 +227,7 @@ function Selected() {
        hashes.forEach(function(hash){
         octokit.request(`GET /repos/${owner}/${repo}/commits/${hash}`)
         .then(({data}) => {
-          updateCommits(commits => [...commits, {date: moment(data.commit.author.date).format("MMM Do YY"), parents: data.parents, author: data.author.login,files:data.files, stats:data.stats}])
+          updateCommits(commits => [...commits, {date: moment(data.commit.author.date).format("MMM DD YYYY"), parents: data.parents, author: data.author.login,files:data.files, stats:data.stats}])
         })
         .finally(() => {
           updateLoad(true)
@@ -233,6 +239,7 @@ function Selected() {
     })
 
     chart = createChart(chart);
+    lineChart = createLineChart(lineChart);
     return () => {
       
     }
@@ -248,6 +255,11 @@ function Selected() {
       {loaded ? table : null}
       <div>
         <canvas id="canvas"></canvas>
+        <Message>
+          <Button onClick={() => load(commits)}>Load More</Button>
+          <Button onClick={() => load(commits)}>Sort</Button>
+        </Message>
+        <canvas id="canvas2"></canvas>
       </div>
     </div>
   );
@@ -275,21 +287,45 @@ function updateCommit(commit, key){
   }
 }
 
+function getCommitData(sha){
+  let owner = OWNER;
+  let repo = REPO;
+  let newHashes = [];
+  let newCommits = [];
+  let a = octokit.repos.listCommits({
+    owner,
+    repo,
+    sha
+  })
+  .then(({data}) => {
+    data.forEach(function(hash){
+      newHashes.push(hash.sha)
+    })
+  })
+  .finally(() => {
+     newHashes.forEach(function(hash){
+      octokit.request(`GET /repos/${owner}/${repo}/commits/${hash}`)
+      .then(({data}) => {
+        return newCommits = [...newCommits, {date: moment(data.commit.author.date).format("MMM Do YY"), parents: data.parents, author: data.author.login,files:data.files, stats:data.stats}]
+      })
+      .catch(err => {
+        console.log(err)
+      })
+    })
+  })
+
+  return a;
+}
+
+async function load(oldCommits){
+  let oldestParentSha = oldCommits[oldCommits.length-1].parents[0].sha;
+  let newCommits = await getCommitData(oldestParentSha)
+  //console.log(newCommits)
+}
+
 function CommitTable(props) {
   let [getRef, setRef] = useDynamicRefs();
-  /*
-  function download(content, fileName, contentType) {
-    var a = document.createElement("a");
-    var file = new Blob([content], {type: contentType});
-    a.href = URL.createObjectURL(file);
-    a.download = fileName;
-    a.click();
-  }
-  //console.log(props.commits.length);
-  if(props.commits.length == 30){
-    let b = JSON.stringify(props.commits)
-    download(b, 'Example.json', 'application/json');
-  }*/
+  lineChart = updateLineChart(props.commits, lineChart);
   return (
     <Table>
       <Table.Header>
@@ -306,8 +342,8 @@ function CommitTable(props) {
       <Table.Body>
       {props.commits.map((commit, key) => 
           <tr key={key} ref={setRef(key.toString())} 
-            onMouseEnter={(e) => highlight(getRef(key.toString()), "In")} 
-            onMouseLeave={(e) => highlight(getRef(key.toString()), "Out")}
+            onMouseEnter={() => highlight(getRef(key.toString()), "In")} 
+            onMouseLeave={() => highlight(getRef(key.toString()), "Out")}
             onClick={() => updateCommit(commit, getRef(key.toString()))}>
             <Table.Cell>{commit.author}</Table.Cell>
             <Table.Cell>{commit.date}</Table.Cell>
