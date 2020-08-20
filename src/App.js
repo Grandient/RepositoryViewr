@@ -186,7 +186,7 @@ function Example(props){
   let commits = example;
   let table = 
   <div id="table">
-    <CommitTable commits={commits}/>
+    <CommitTable commits={commits} example={true}/>
   </div>
 
   useEffect(() => {
@@ -195,7 +195,7 @@ function Example(props){
     lineChart = updateLineChart(commits, lineChart);
     return () => {
     }
-  }, [])
+  },)
 
   return (
     <div className="mainContainer">
@@ -249,7 +249,7 @@ function Selected() {
 
   let table = 
     <div id="table">
-      <CommitTable commits={commits} example={true}/>
+      <CommitTable commits={commits} example={false}/>
     </div>
 
   return (
