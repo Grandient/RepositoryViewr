@@ -191,6 +191,8 @@ function Example(props){
 
   useEffect(() => {
     chart = createChart(chart);
+    lineChart = createLineChart(lineChart);
+    lineChart = updateLineChart(commits, lineChart);
     return () => {
     }
   }, [])
@@ -247,7 +249,7 @@ function Selected() {
 
   let table = 
     <div id="table">
-      <CommitTable commits={commits}/>
+      <CommitTable commits={commits} example={true}/>
     </div>
 
   return (
@@ -325,7 +327,9 @@ async function load(oldCommits){
 
 function CommitTable(props) {
   let [getRef, setRef] = useDynamicRefs();
-  lineChart = updateLineChart(props.commits, lineChart);
+  if(props.example == false){
+    lineChart = updateLineChart(props.commits, lineChart);
+  }
   return (
     <Table>
       <Table.Header>
